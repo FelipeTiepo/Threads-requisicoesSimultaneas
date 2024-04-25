@@ -1,39 +1,52 @@
-const graficoDolar = document.getElementById('graficoDolar')
+import imprimeCotacao from "./imprimeCotacao.js";
 
+const graficoDolar = document.getElementById('graficoDolar');
 const graficoParaDolar = new Chart(graficoDolar, {
     type: 'line',
     data: {
-      labels: [],
-      datasets: [{
-        label: 'Dólar',
-        data: [],
-        borderWidth: 1
-      }]
+        labels: [],
+        datasets: [{
+            label: 'Dólar',
+            data: [],
+            borderWidth: 1
+        }]
     },
-  });
-  
-//SETINTERVAL define um intervalo para algo acontecer dentro dos parametros, o tempo que voce quer
-setInterval(() => conectaAPI(), 5000)
+});
 
-async function conectaAPI(){
-    const conecta = await fetch("https://economia.awesomeapi.com.br/json/last/USD-BRL")
-    const conectaTraduzido = await conecta.json()
-    let tempo = geraHorario()
-    let valor = conectaTraduzido.USDBRL.ask
-    adicionarDados(graficoParaDolar, tempo, valor)
-}
-
-
-function geraHorario(){
-    let data = new Date()
-    let horario = data.getHours() + ":" + data.getMinutes() + ":" + data.getSeconds()
-    return horario
+function geraHorario() {
+    let data = new Date();
+    let horario = data.getHours() + ":" + data.getMinutes() + ":" + data.getSeconds();
+    console.log(horario);
+    return horario;
 }
 
 function adicionarDados(grafico, legenda, dados) {
-    grafico.data.labels.push(legenda)
+    grafico.data.labels.push(legenda);
     grafico.data.datasets.forEach((dataset) => {
-        dataset.data.data.push(dados)
+        dataset.data.push(dados);
     })
-    grafico.update()
+    grafico.update();
 }
+//utilizado para executar scripts em threads em segundo plano
+let workerDolar = new Worker('./script/workers/workerDolar.js');
+workerDolar.postMessage('usd');
+
+workerDolar.addEventListener("message", event => {
+    let tempo = geraHorario();
+    let valor = event.data.ask;
+    imprimeCotacao("dolar", valor);
+    adicionarDados(graficoParaDolar, tempo, valor);
+})
+
+const graficoIene = document.getElementById('graficoIene')
+const graficoParaIene = new Chart(graficoIene, {
+  type: 'line',
+  data: {
+      labels: [],
+      datasets: [{
+          label: 'Iene',
+          data: [],
+          borderWidth: 1
+      }]
+  },
+})
